@@ -56,8 +56,7 @@ python calculate_similarity.py --query_file queries.txt --database_file database
 python calculate_similarity.py --query_file queries.txt --database_file database.txt --model_dir model/ --load_queries
 ```
 
-* The calculated similarities are stored to the file given to the ```--output_file```. The file is in JSON format and
-contain a dictionary with every query id as key and value another dictionary that contains the similarities of the 
+* The calculated similarities are stored to the file given to the ```--output_file``` argument. The generated file is in JSON format and contains a dictionary with every query id as key and value another dictionary that contains the similarities of the 
 dataset videos to the corresponding query. See the example below
 ```bash
     {
