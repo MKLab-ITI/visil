@@ -29,7 +29,7 @@ conda install --file requirements.txt
 
 * Download and unzip the pretrained model:
 ```bash
-wget ndd.iti.gr/visil/model.zip
+wget http://ndd.iti.gr/visil/model.zip
 unzip model.zip
 ```
 
