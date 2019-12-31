@@ -7,7 +7,7 @@ It provides code for the calculation of similarities between the query and datab
 
 ## Prerequisites
 * Python 3
-* Tensorflow 1.xx
+* Tensorflow 1.xx (tested with 1.8-1.15)
 
 ## Getting started
 
