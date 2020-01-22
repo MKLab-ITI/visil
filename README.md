@@ -131,7 +131,7 @@ videos to the corresponding queries as values. See the example below
 * Run the `evaluation.py` by providing the name of the evaluation dataset, the path to video files, 
 the pattern that the videos are stored
 ```bash
-python evaluation.py -d FIVR-5K -v /path/to/videos/ -p {id}/video.* -l
+python evaluation.py --dataset FIVR-5K --video_dir /path/to/videos/ --pattern {id}/video.* --load_queries
 ```
 
 
