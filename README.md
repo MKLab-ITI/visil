@@ -88,7 +88,7 @@ videos to the corresponding queries as values. See the example below
 
 * Add flag `--help` to display the detailed description for the arguments of the similarity calculation script
 
-```bash
+```
   -q, --query_file QUERY_FILE                     Path to file that contains the query videos
   -d, --database_file DATABASE_FILE               Path to file that contains the database videos
   -o, --output_file OUTPUT_FILE                   Name of the output file. Default: "results.json"
