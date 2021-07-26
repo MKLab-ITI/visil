@@ -1,3 +1,4 @@
 numpy>=1.9
 tqdm>=4.2
 opencv-python>=3.1
+scikit-learn
