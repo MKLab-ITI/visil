@@ -1,84 +1,16 @@
-import os
-import cv2
-import glob
 import numpy as np
 import pickle as pk
-import tensorflow as tf
 
+from collections import OrderedDict
+from sklearn.metrics import average_precision_score
 
-def resize_frame(frame, desired_size):
-    min_size = np.min(frame.shape[:2])
-    ratio = desired_size / min_size
-    frame = cv2.resize(frame, dsize=(0, 0), fx=ratio, fy=ratio, interpolation=cv2.INTER_CUBIC)
-    return frame
-
-
-def center_crop(frame, desired_size):
-    old_size = frame.shape[:2]
-    top = int(np.maximum(0, (old_size[0] - desired_size)/2))
-    left = int(np.maximum(0, (old_size[1] - desired_size)/2))
-    return frame[top: top+desired_size, left: left+desired_size, :]
-
-
-def load_video(video, all_frames=False):
-    cap = cv2.VideoCapture(video)
-    fps = cap.get(cv2.CAP_PROP_FPS)
-    if fps > 144 or fps is None:
-        fps = 25
-    frames = []
-    count = 0
-    while cap.isOpened():
-        ret, frame = cap.read()
-        if isinstance(frame, np.ndarray):
-            if int(count % round(fps)) == 0 or all_frames:
-                frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
-                frames.append(center_crop(resize_frame(frame, 256), 256))
-        else:
-            break
-        count += 1
-    cap.release()
-    return np.array(frames)
-
-
-class VideoGenerator(tf.keras.utils.Sequence):
-    def __init__(self, video_file, all_frames=False):
-        super(VideoGenerator, self).__init__()
-        self.videos = np.loadtxt(video_file, dtype=str)
-        self.videos = np.expand_dims(self.videos, axis=0) if self.videos.ndim == 1 else self.videos
-        self.all_frames = all_frames
-
-    def __len__(self):
-        return len(self.videos)
-
-    def __getitem__(self, index):
-        return load_video(self.videos[index][1], all_frames=self.all_frames), self.videos[index][0]
-
-
-class DatasetGenerator(tf.keras.utils.Sequence):
-    def __init__(self, rootDir, videos, pattern, all_frames=False):
-        super(DatasetGenerator, self).__init__()
-        self.rootDir = rootDir
-        self.videos = videos
-        self.pattern = pattern
-        self.all_frames = all_frames
-
-    def __len__(self):
-        return len(self.videos)
-
-    def __getitem__(self, index):
-        video = glob.glob(os.path.join(self.rootDir, self.pattern.replace('{id}', self.videos[index])))
-        if not len(video):
-            print('[WARNING] Video not found: ', self.videos[index])
-            return np.array([]), None
-        else:
-            return load_video(video[0], all_frames=self.all_frames), self.videos[index]
-
-
+        
 class CC_WEB_VIDEO(object):
 
     def __init__(self):
         with open('datasets/cc_web_video.pickle', 'rb') as f:
             dataset = pk.load(f)
+        self.name = 'CC_WEB_VIDEO'
         self.database = dataset['index']
         self.queries = dataset['queries']
         self.ground_truth = dataset['ground_truth']
@@ -109,27 +41,31 @@ class CC_WEB_VIDEO(object):
                 mAP += s / positives
         return mAP / len(set(self.queries).intersection(similarities.keys()))
 
-    def evaluate(self, similarities, all_db=None):
+    def evaluate(self, similarities, all_db=None, verbose=True):
         if all_db is None:
             all_db = self.database
 
-        print('=' * 5, 'CC_WEB_VIDEO Dataset', '=' * 5)
-        not_found = len(set(self.queries) - similarities.keys())
-        if not_found > 0:
-            print('[WARNING] {} queries are missing from the results and will be ignored'.format(not_found))
-        print('Queries: {} videos'.format(len(similarities)))
-        print('Database: {} videos'.format(len(all_db)))
+        if verbose:
+            print('=' * 5, 'CC_WEB_VIDEO Dataset', '=' * 5)
+            not_found = len(set(self.queries) - similarities.keys())
+            if not_found > 0:
+                print('[WARNING] {} queries are missing from the results and will be ignored'.format(not_found))
+            print('Queries: {} videos'.format(len(similarities)))
+            print('Database: {} videos'.format(len(all_db)))
 
-        print('-' * 25)
-        print('All dataset')
-        print('CC_WEB mAP: {:.4f}\nCC_WEB* mAP: {:.4f}\n'.format(
-            self.calculate_mAP(similarities, all_videos=False, clean=False),
-            self.calculate_mAP(similarities, all_videos=True, clean=False)))
+        mAP = self.calculate_mAP(similarities, all_videos=False, clean=False)
+        mAP_star = self.calculate_mAP(similarities, all_videos=True, clean=False)
+        if verbose:
+            print('-' * 25)
+            print('All dataset')
+            print('CC_WEB mAP: {:.4f}\nCC_WEB* mAP: {:.4f}\n'.format(mAP, mAP_star))
 
-        print('Clean dataset')
-        print('CC_WEB mAP: {:.4f}\nCC_WEB* mAP: {:.4f}'.format(
-            self.calculate_mAP(similarities, all_videos=False, clean=True),
-            self.calculate_mAP(similarities, all_videos=True, clean=True)))
+        mAP_c = self.calculate_mAP(similarities, all_videos=False, clean=True)
+        mAP_c_star = self.calculate_mAP(similarities, all_videos=True, clean=True)
+        if verbose:
+            print('Clean dataset')
+            print('CC_WEB mAP: {:.4f}\nCC_WEB* mAP: {:.4f}'.format(mAP_c, mAP_c_star))
+        return {'mAP': mAP, 'mAP_star': mAP_star, 'mAP_c': mAP_c, 'mAP_c_star': mAP_c_star}
 
 
 class FIVR(object):
@@ -138,6 +74,7 @@ class FIVR(object):
         self.version = version
         with open('datasets/fivr.pickle', 'rb') as f:
             dataset = pk.load(f)
+        self.name = 'FIVR'
         self.annotation = dataset['annotation']
         self.queries = dataset[self.version]['queries']
         self.database = dataset[self.version]['database']
@@ -156,34 +93,36 @@ class FIVR(object):
         i, ri, s = 0.0, 0, 0.0
         for video in sorted(res.keys(), key=lambda x: res[x], reverse=True):
             if video != query and video in all_db:
-                    ri += 1
-                    if video in query_gt:
-                        i += 1.0
-                        s += i / ri
+                ri += 1
+                if video in query_gt:
+                    i += 1.0
+                    s += i / ri
         return s / len(query_gt)
 
-    def evaluate(self, similarities, all_db=None):
+    def evaluate(self, similarities, all_db=None, verbose=True):
         if all_db is None:
             all_db = self.database
 
         DSVR, CSVR, ISVR = [], [], []
         for query, res in similarities.items():
-            DSVR.append(self.calculate_mAP(query, res, all_db, relevant_labels=['ND', 'DS']))
-            CSVR.append(self.calculate_mAP(query, res, all_db, relevant_labels=['ND', 'DS', 'CS']))
-            ISVR.append(self.calculate_mAP(query, res, all_db, relevant_labels=['ND', 'DS', 'CS', 'IS']))
+            if query in self.queries:
+                DSVR.append(self.calculate_mAP(query, res, all_db, relevant_labels=['ND', 'DS']))
+                CSVR.append(self.calculate_mAP(query, res, all_db, relevant_labels=['ND', 'DS', 'CS']))
+                ISVR.append(self.calculate_mAP(query, res, all_db, relevant_labels=['ND', 'DS', 'CS', 'IS']))
+        if verbose:
+            print('=' * 5, 'FIVR-{} Dataset'.format(self.version.upper()), '=' * 5)
+            not_found = len(set(self.queries) - similarities.keys())
+            if not_found > 0:
+                print('[WARNING] {} queries are missing from the results and will be ignored'.format(not_found))
 
-        print('=' * 5, 'FIVR-{} Dataset'.format(self.version.upper()), '=' * 5)
-        not_found = len(set(self.queries) - similarities.keys())
-        if not_found > 0:
-            print('[WARNING] {} queries are missing from the results and will be ignored'.format(not_found))
+            print('Queries: {} videos'.format(len(similarities)))
+            print('Database: {} videos'.format(len(all_db)))
 
-        print('Queries: {} videos'.format(len(similarities)))
-        print('Database: {} videos'.format(len(all_db)))
-
-        print('-' * 16)
-        print('DSVR mAP: {:.4f}'.format(np.mean(DSVR)))
-        print('CSVR mAP: {:.4f}'.format(np.mean(CSVR)))
-        print('ISVR mAP: {:.4f}'.format(np.mean(ISVR)))
+            print('-' * 16)
+            print('DSVR mAP: {:.4f}'.format(np.mean(DSVR)))
+            print('CSVR mAP: {:.4f}'.format(np.mean(CSVR)))
+            print('ISVR mAP: {:.4f}'.format(np.mean(ISVR)))
+        return {'DSVR': np.mean(DSVR), 'CSVR': np.mean(CSVR), 'ISVR': np.mean(ISVR)}
 
 
 class EVVE(object):
@@ -191,13 +130,14 @@ class EVVE(object):
     def __init__(self):
         with open('datasets/evve.pickle', 'rb') as f:
             dataset = pk.load(f)
+        self.name = 'EVVE'
         self.events = dataset['annotation']
         self.queries = dataset['queries']
         self.database = dataset['database']
         self.query_to_event = {qname: evname
                                for evname, (queries, _, _) in self.events.items()
                                for qname in queries}
-
+        
     def get_queries(self):
         return list(self.queries)
 
@@ -231,7 +171,7 @@ class EVVE(object):
             ap += (precision_1 + precision_0) * recall_step / 2.0
         return ap
 
-    def evaluate(self, similarities, all_db=None):
+    def evaluate(self, similarities, all_db=None, verbose=True):
         results = {e: [] for e in self.events}
         if all_db is None:
             all_db = set(self.database).union(set(self.queries))
@@ -257,61 +197,94 @@ class EVVE(object):
 
                 ap = self.score_ap_from_ranks_1(pos_ranks, len(pos))
                 results[evname].append(ap)
-
-        print('=' * 18, 'EVVE Dataset', '=' * 18)
-
-        if not_found > 0:
-            print('[WARNING] {} queries are missing from the results and will be ignored'.format(not_found))
-        print('Queries: {} videos'.format(len(similarities)))
-        print('Database: {} videos\n'.format(len(all_db - set(self.queries))))
-        print('-' * 50)
-        ap = []
+        if verbose:
+            print('=' * 18, 'EVVE Dataset', '=' * 18)
+            if not_found > 0:
+                print('[WARNING] {} queries are missing from the results and will be ignored'.format(not_found))
+            print('Queries: {} videos'.format(len(similarities)))
+            print('Database: {} videos\n'.format(len(all_db - set(self.queries))))
+            print('-' * 50)
+        ap, mAP = [], []
         for evname in sorted(self.events):
             queries, _, _ = self.events[evname]
             nq = len(queries.intersection(all_db))
             ap.extend(results[evname])
-            print('{0: <36} '.format(evname), 'mAP = {:.4f}'.format(np.sum(results[evname]) / nq))
+            mAP.append(np.sum(results[evname]) / nq)
+            if verbose:
+                print('{0: <36} '.format(evname), 'mAP = {:.4f}'.format(np.sum(results[evname]) / nq))
 
-        print('=' * 50)
-        print('overall mAP = {:.4f}'.format(np.mean(ap)))
+        if verbose:
+            print('=' * 50)
+            print('overall mAP = {:.4f}'.format(np.mean(ap)))
+        return {'mAP': np.mean(ap)}
 
 
-class ActivityNet(object):
+class SVD(object):
 
-    def __init__(self):
-        with open('datasets/activity_net.pickle', 'rb') as f:
-            self.dataset = pk.load(f)
+    def __init__(self, version='unlabeled'):
+        self.name = 'SVD'
+        self.ground_truth = self.load_groundtruth('datasets/test_groundtruth')
+        self.unlabeled_keys = self.get_unlabeled_keys('datasets/unlabeled-data-id')
+        if version == 'labeled':
+            self.unlabeled_keys = []
+        self.database = []
+        for k, v in self.ground_truth.items():
+            self.database.extend(list(map(str, v.keys())))
+        self.database += self.unlabeled_keys
+        self.database_idxs = {d: i for i, d in enumerate(self.database)}
+
+    def load_groundtruth(self, filepath):
+        gnds = OrderedDict()
+        with open(filepath, 'r') as fp:
+            for idx, lines in enumerate(fp):
+                tmps = lines.strip().split(' ')
+                qid = tmps[0]
+                cid = tmps[1]
+                gt = int(tmps[-1])
+                if qid not in gnds:
+                    gnds[qid] = {cid: gt}
+                else:
+                    gnds[qid][cid] = gt
+        return gnds
+
+    def get_unlabeled_keys(self, filepath):
+        videos = list()
+        with open(filepath, 'r') as fp:
+            for tmps in fp:
+                videos.append(tmps.strip())
+        return videos
 
     def get_queries(self):
-        return list(map(str, self.dataset.keys()))
+        return list(map(str, self.ground_truth.keys()))
 
     def get_database(self):
-        return list(map(str, self.dataset.keys()))
+        return self.database
 
-    def calculate_AP(self, res, pos):
-        i, ri, s = 0.0, 0.0, 0.0
-        for ri, video in enumerate(sorted(res.keys(), key=lambda x: res[x], reverse=True)):
-            if video in pos:
-                i += 1.0
-                s += i / (ri + 1.)
-        return s / len(pos)
+    def evaluate(self, similarities, all_db=None, verbose=True):
+        mAP = []
+        not_found = len(self.ground_truth.keys() - similarities.keys())
+        for query, targets in self.ground_truth.items():
+            y_true, y_score = [], []
+            for target, label in targets.items():
+                if target in all_db:
+                    # s = similarities[query][self.database_idxs[target]]
+                    s = similarities[query][target]
+                    y_true.append(label)
+                    y_score.append(s)
 
-    def evaluate(self, similarities, all_db=None):
-        mAP, not_found = [], 0
-        if all_db is None:
-            all_db = set(self.get_database())
+            for target in self.unlabeled_keys:
+                if target in all_db:
+                    # s = similarities[query][self.database_idxs[target]]
+                    s = similarities[query][target]
+                    y_true.append(0)
+                    y_score.append(s)
+            mAP.append(average_precision_score(y_true, y_score))
+        if verbose:
+            print('=' * 5, 'SVD Dataset', '=' * 5)
+            if not_found > 0:
+                print('[WARNING] {} queries are missing from the results and will be ignored'.format(not_found))
+            print('Database: {} videos'.format(len(all_db)))
 
-        for query in self.dataset.keys():
-            if query not in similarities:
-                not_found += 1
-            else:
-                pos = self.dataset[query].intersection(all_db)
-                mAP += [self.calculate_AP(similarities[query], pos)]
-
-        print('=' * 5, 'ActivityNet Dataset', '=' * 5)
-        if not_found > 0:
-            print('[WARNING] {} queries are missing from the results and will be ignored'.format(not_found))
-        print('Database: {} videos'.format(len(all_db)))
-
-        print('-' * 16)
-        print('mAP: {:.4f}'.format(np.mean(mAP)))
+            print('-' * 16)
+            print('mAP: {:.4f}'.format(np.mean(mAP)))
+        return {'mAP': np.mean(mAP)}
