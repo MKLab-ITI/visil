@@ -4,7 +4,8 @@ This repository contains the Tensorflow implementation of the paper
 It provides code for the calculation of similarities between the query and database videos given by the user.
 Also, it contains an evaluation script to reproduce the results of the paper. The video similarity calculation
 is achieved by applying a frame-to-frame function that respects the spatial within-frame structure of videos and 
-a learned video-to-video similarity function that also considers the temporal structure of videos.
+a learned video-to-video similarity function that also considers the temporal structure of videos. 
+The PyTorch implementation of ViSiL can be found here [here](https://github.com/MKLab-ITI/visil/tree/pytorch)
 
 <img src="https://raw.githubusercontent.com/MKLab-ITI/visil/master/video_similarity.png" width="70%">
 
@@ -83,7 +84,6 @@ videos to the corresponding queries as values. See the example below
           ...},
       ....
     }
-    ```
 ```
 
 * Add flag `--help` to display the detailed description for the arguments of the similarity calculation script
@@ -168,7 +168,7 @@ If you use this code for your research, please cite our paper.
 }
 ```
 ## Related Projects
-**[FIVR-200K](https://github.com/MKLab-ITI/FIVR-200K)**
+**[DnS](https://github.com/mever-team/distill-and-select)**  **[FIVR-200K](https://github.com/MKLab-ITI/FIVR-200K)**
 
 ## License
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details
@@ -176,4 +176,3 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 ## Contact for further details about the project
 
 Giorgos Kordopatis-Zilos (georgekordopatis@iti.gr) <br>
-Symeon Papadopoulos (papadop@iti.gr)
