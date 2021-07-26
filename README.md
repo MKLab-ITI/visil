@@ -4,7 +4,8 @@ This repository contains the PyTorch implementation of the paper
 
 ## Prerequisites
 * Python 3
-* PyTorch 1.xx (tested with 1.1-1.9)
+* PyTorch >= 1.1
+* Torchvision >= 0.4
 
 ## Getting started
 
