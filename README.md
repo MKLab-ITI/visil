@@ -183,7 +183,7 @@ If you use this code for your research, please cite our paper.
 }
 ```
 ## Related Projects
-**[FIVR-200K](https://github.com/MKLab-ITI/FIVR-200K)**
+**[DnS](https://github.com/mever-team/distill-and-select)** **[FIVR-200K](https://github.com/MKLab-ITI/FIVR-200K)**
 
 ## License
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details
@@ -191,4 +191,3 @@ This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENS
 ## Contact for further details about the project
 
 Giorgos Kordopatis-Zilos (georgekordopatis@iti.gr) <br>
-Symeon Papadopoulos (papadop@iti.gr)
