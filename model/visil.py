@@ -20,7 +20,7 @@ class Feature_Extractor(nn.Module):
         self.rpool = RMAC()
         self.layers = {'layer1': 28, 'layer2': 14, 'layer3': 6, 'layer4': 3}
         if whiteninig or dims != 3840:
-            self.pca = PCA('model/pca.npz', dims)
+            self.pca = PCA(dims)
 
     def extract_region_vectors(self, x):
         tensors = []
