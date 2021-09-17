@@ -41,7 +41,7 @@ unzip ckpt.zip
 * If you want to use I3D as backbone network (used for AVR in the paper), then install the following packages:
 ```bash
 # For tensoflow version >= 1.14
-pip install tensorflow-probability==0.7 dm-sonnet
+pip install tensorflow-probability==0.7 dm-sonnet==1.25
 
 # For tensoflow version < 1.14
 pip install tensorflow-probability==0.6 dm-sonnet==1.23
