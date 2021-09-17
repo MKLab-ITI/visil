@@ -67,8 +67,8 @@ class ViSiL(object):
                 print('[INFO] Queries will NOT be loaded to the gpu')
                 self.query = tf.placeholder(tf.float32, [None, None, None], name='query')
                 self.target = tf.placeholder(tf.float32, [None, None, None], name='target')
-                sim_matrix = self.frame_to_frame_similarity(self.query, self.target)
-                self.similarity = self.video_to_video_similarity(sim_matrix)
+                self.sim_matrix = self.frame_to_frame_similarity(self.query, self.target)
+                self.similarity = self.video_to_video_similarity(self.sim_matrix)
 
         init = self.load_model(model_dir)
         config = tf.ConfigProto(allow_soft_placement=True)
@@ -135,6 +135,7 @@ class ViSiL(object):
     def video_to_video_similarity(self, sim):
         if hasattr(self, 'vid_comp'):
             sim = self.vid_comp(sim)
+            self.visil_output = sim
         sim = self.v2v_sim(sim)
         return sim
 
@@ -155,14 +156,13 @@ class ViSiL(object):
                 if batch.shape[0] >= batch_sz or self.net == 'resnet':
                     features.append(self.sess.run(self.region_vectors, feed_dict={self.frames: batch}))
         features = np.concatenate(features, axis=0)
-        while features.shape[0] < 8:
+        while features.shape[0] < 4:
             features = np.concatenate([features, features], axis=0)
         return features
 
     def set_queries(self, queries):
         if self.load_queries:
-            for i in range(len(queries)):
-                self.sess.run(tf.assign(self.queries[i], queries[i], validate_shape=False))
+            self.sess.run([tf.assign(self.queries[i], queries[i], validate_shape=False) for i in range(len(queries))])
         else:
             self.queries = queries
 
@@ -180,3 +180,9 @@ class ViSiL(object):
 
     def calculate_video_similarity(self, query, target):
         return self.sess.run(self.similarity, feed_dict={self.query: query, self.target: target})
+    
+    def calculate_f2f_matrix(self, query, target):
+        return self.sess.run(self.sim_matrix, feed_dict={self.query: query, self.target: target})
+    
+    def calculate_visil_output(self, query, target):
+        return self.sess.run(self.visil_output, feed_dict={self.query: query, self.target: target})
