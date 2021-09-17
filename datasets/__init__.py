@@ -21,6 +21,7 @@ def center_crop(frame, desired_size):
 
 
 def load_video(video, all_frames=False):
+    cv2.setNumThreads(3)
     cap = cv2.VideoCapture(video)
     fps = cap.get(cv2.CAP_PROP_FPS)
     if fps > 144 or fps is None:
@@ -28,13 +29,14 @@ def load_video(video, all_frames=False):
     frames = []
     count = 0
     while cap.isOpened():
-        ret, frame = cap.read()
-        if isinstance(frame, np.ndarray):
-            if int(count % round(fps)) == 0 or all_frames:
+        ret = cap.grab()
+        if int(count % round(fps)) == 0 or all_frames:
+            ret, frame = cap.retrieve()
+            if isinstance(frame, np.ndarray):
                 frame = cv2.cvtColor(frame, cv2.COLOR_BGR2RGB)
                 frames.append(center_crop(resize_frame(frame, 256), 256))
-        else:
-            break
+            else:
+                break
         count += 1
     cap.release()
     return np.array(frames)
@@ -168,9 +170,10 @@ class FIVR(object):
 
         DSVR, CSVR, ISVR = [], [], []
         for query, res in similarities.items():
-            DSVR.append(self.calculate_mAP(query, res, all_db, relevant_labels=['ND', 'DS']))
-            CSVR.append(self.calculate_mAP(query, res, all_db, relevant_labels=['ND', 'DS', 'CS']))
-            ISVR.append(self.calculate_mAP(query, res, all_db, relevant_labels=['ND', 'DS', 'CS', 'IS']))
+            if query in self.queries:
+                DSVR.append(self.calculate_mAP(query, res, all_db, relevant_labels=['ND', 'DS']))
+                CSVR.append(self.calculate_mAP(query, res, all_db, relevant_labels=['ND', 'DS', 'CS']))
+                ISVR.append(self.calculate_mAP(query, res, all_db, relevant_labels=['ND', 'DS', 'CS', 'IS']))
 
         print('=' * 5, 'FIVR-{} Dataset'.format(self.version.upper()), '=' * 5)
         not_found = len(set(self.queries) - similarities.keys())
