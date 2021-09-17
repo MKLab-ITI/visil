@@ -15,3 +15,7 @@ RUN unzip ckpt.zip -d /visil
 RUN python -m pip install --upgrade pip 
 
 RUN python -m pip install --upgrade numpy tqdm>=4.2 opencv-python>=3.1.0
+
+RUN python -m pip install --upgrade tensorflow-probability==0.7 dm-sonnet==1.25
+
+WORKDIR /visil
