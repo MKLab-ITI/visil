@@ -6,7 +6,7 @@ Also, it contains an evaluation script to reproduce the results of the paper. Th
 is achieved by applying a frame-to-frame function that respects the spatial within-frame structure of videos and 
 a learned video-to-video similarity function that also considers the temporal structure of videos. 
 
-The PyTorch implementation of ViSiL can be found here [here](https://github.com/MKLab-ITI/visil/tree/pytorch)
+The PyTorch implementation of ViSiL can be found [here](https://github.com/MKLab-ITI/visil/tree/pytorch)
 
 <img src="https://raw.githubusercontent.com/MKLab-ITI/visil/master/video_similarity.png" width="70%">
 
@@ -26,10 +26,6 @@ cd visil
 * You can install all the dependencies by
 ```bash
 pip install -r requirements.txt
-```
-or
-```bash
-conda install --file requirements.txt
 ```
 
 * Download and unzip the pretrained model:
@@ -160,7 +156,8 @@ similarity = model.calculate_video_similarity(query_features, target_features)
 ```
 
 ## Docker
-Thanks to [@theycallmeloki](https://github.com/theycallmeloki) for providing a [Dockerfile](https://github.com/MKLab-ITI/visil/blob/master/Dockerfile) to setup a docker container for the repo.
+Thanks to [@theycallmeloki](https://github.com/theycallmeloki) for providing a 
+[Dockerfile](https://github.com/MKLab-ITI/visil/blob/master/Dockerfile) to setup a docker container for the repo.
 
 * First build a docker image based on the Dockerfile
 ```bash
@@ -172,14 +169,18 @@ docker build -t visil:latest .
 docker run -it --gpus all --name ViSiL visil:latest
 ```
 
+## Visualization
+To visualize similarity matrices and the ViSiL outputs, you may use 
+[this Colab notebook](https://colab.research.google.com/drive/1XwkQpXrpyr7jjq3xCL7anASBjNfNCnkn).
+
 ## Citation
 If you use this code for your research, please cite our paper.
 ```
 @inproceedings{kordopatis2019visil,
-  title={ViSiL: Fine-grained Spatio-Temporal Video Similarity Learning},
-  author={Kordopatis-Zilos, Giorgos and Papadopoulos, Symeon and Patras, Ioannis and Kompatsiaris, Ioannis},
-  booktitle={IEEE International Conference on Computer Vision (ICCV)},
-  year={2019},
+  title={{ViSiL}: Fine-grained Spatio-Temporal Video Similarity Learning},
+    author={Kordopatis-Zilos, Giorgos and Papadopoulos, Symeon and Patras, Ioannis and Kompatsiaris, Ioannis},
+  booktitle={Proceedings of the IEEE/CVF International Conference on Computer Vision},
+  year={2019}
 }
 ```
 ## Related Projects
