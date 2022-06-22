@@ -1,4 +1,3 @@
-import math
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
@@ -32,8 +31,9 @@ class ChamferSimilarity(nn.Module):
 
     def chamfer_similarity(self, s, max_axis=1, mean_axis=0):
         s = torch.max(s, max_axis, keepdim=True)[0]
-        return torch.mean(s, mean_axis, keepdim=True).squeeze(max_axis).squeeze(mean_axis)
-        
+        s = torch.mean(s, mean_axis, keepdim=True)
+        return s.squeeze(max(max_axis, mean_axis)).squeeze(min(max_axis, mean_axis))
+
     def symmetric_chamfer_similarity(self, s, axes=[0, 1]):
         return (self.chamfer_similarity(s, max_axis=axes[0], mean_axis=axes[1]) +
                 self.chamfer_similarity(s, max_axis=axes[1], mean_axis=axes[0])) / 2

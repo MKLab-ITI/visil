@@ -26,6 +26,9 @@ if __name__ == '__main__':
                         help='Id of the GPU used.')
     parser.add_argument('--load_queries', action='store_true',
                         help='Flag that indicates that the queries will be loaded to the GPU memory.')
+    parser.add_argument('--similarity_function', type=str, default='chamfer', choices=["chamfer", "symmetric_chamfer"],
+                        help='Function that will be used to calculate similarity '
+                             'between query-target frames and videos.')
     parser.add_argument('--workers', type=int, default=8,
                         help='Number of workers used for video loading.')
     args = parser.parse_args()
@@ -35,12 +38,13 @@ if __name__ == '__main__':
     loader = DataLoader(generator, num_workers=args.workers)
 
     # Initialize ViSiL model
-    model = ViSiL(pretrained=True).to(args.gpu_id)
+    model = ViSiL(pretrained=True, symmetric='symmetric' in args.similarity_function).to(args.gpu_id)
     model.eval()
 
     # Extract features of the queries
     queries, queries_ids = [], []
     pbar = tqdm(loader)
+    print('> Extract features of the query videos')
     for video in pbar:
         frames = video[0][0]
         video_id = video[1][0]
@@ -57,6 +61,7 @@ if __name__ == '__main__':
     # Calculate similarities between the queries and the database videos
     similarities = dict({query: dict() for query in queries_ids})
     pbar = tqdm(loader)
+    print('\n> Calculate query-target similarities')
     for video in pbar:
         frames = video[0][0]
         video_id = video[1][0]

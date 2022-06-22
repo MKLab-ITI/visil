@@ -48,15 +48,15 @@ class Feature_Extractor(nn.Module):
     
 class ViSiLHead(nn.Module):
 
-    def __init__(self, dims=3840, attention=True, video_comperator=True):
+    def __init__(self, dims=3840, attention=True, video_comperator=True, symmetric=False):
         super(ViSiLHead, self).__init__()
         if attention:
             self.attention = Attention(dims, norm=True)
         if video_comperator:
             self.video_comperator = VideoComperator()
         self.tensor_dot = TensorDot("biok,bjpk->biopj")
-        self.f2f_sim = ChamferSimilarity(axes=[3, 2])
-        self.v2v_sim = ChamferSimilarity(axes=[2, 1])
+        self.f2f_sim = ChamferSimilarity(axes=[3, 2], symmetric=symmetric)
+        self.v2v_sim = ChamferSimilarity(axes=[2, 1], symmetric=symmetric)
         self.htanh = nn.Hardtanh()
     
     def frame_to_frame_similarity(self, query, target):
@@ -97,31 +97,35 @@ class ViSiLHead(nn.Module):
     
 class ViSiL(nn.Module):
     
-    def __init__(self, network='resnet50', pretrained=False, dims=3840, batch_sz=64, load_queries=True,
-                 whiteninig=True, attention=True, video_comperator=True, sim_batch_sz=2000):
+    def __init__(self, network='resnet50', pretrained=False, dims=3840,
+                 whiteninig=True, attention=True, video_comperator=True, symmetric=False):
         super(ViSiL, self).__init__()
         
-        self.batch_sz = batch_sz
-        self.sim_batch_sz = sim_batch_sz
-        self.load_queries = load_queries
-
-        self.cnn = Feature_Extractor(network, whiteninig, dims)
-        self.visil_head = ViSiLHead(dims, attention, video_comperator)
-        
-        if pretrained and video_comperator and attention:
+        if pretrained and not symmetric:
+            self.cnn = Feature_Extractor('resnet50', True, 3840)
+            self.visil_head = ViSiLHead(3840, True, True, False)
             self.visil_head.load_state_dict(
                 torch.hub.load_state_dict_from_url(
                     'http://ndd.iti.gr/visil/visil.pth'))
+        elif pretrained and symmetric:
+            self.cnn = Feature_Extractor('resnet50', True, 512)
+            self.visil_head = ViSiLHead(512, True, True, True)
+            self.visil_head.load_state_dict(
+                torch.hub.load_state_dict_from_url(
+                    'http://ndd.iti.gr/visil/visil_symmetric.pth'))
+        else:
+            self.cnn = Feature_Extractor(network, whiteninig, dims)
+            self.visil_head = ViSiLHead(dims, attention, video_comperator, symmetric)
     
-    def frame_to_frame_similarity(self, query, target):
-        return self.visil_head.frame_to_frame_similarity(query, target)
-
     def calculate_video_similarity(self, query, target):
         return self.visil_head(query, target)
-    
-    def visil_output(self, query, target):
+
+    def calculate_f2f_matrix(self, query, target):
+        return self.visil_head.frame_to_frame_similarity(query, target)
+
+    def calculate_visil_output(self, query, target):
         sim = self.visil_head.frame_to_frame_similarity(query, target)
-        return self.visil_head.visil_output(query, target)
+        return self.visil_head.visil_output(sim)
         
     def extract_features(self, video_tensor):
         features = self.cnn(video_tensor)

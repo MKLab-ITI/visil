@@ -92,6 +92,9 @@ if __name__ == '__main__':
                         help='Id of the GPU used.')
     parser.add_argument('--load_queries', action='store_true',
                         help='Flag that indicates that the queries will be loaded to the GPU memory.')
+    parser.add_argument('--similarity_function', type=str, default='chamfer', choices=["chamfer", "symmetric_chamfer"],
+                        help='Function that will be used to calculate similarity '
+                             'between query-target frames and videos.')
     parser.add_argument('--workers', type=int, default=8,
                         help='Number of workers used for video loading.')
     args = parser.parse_args()
@@ -109,7 +112,7 @@ if __name__ == '__main__':
         from datasets import SVD
         dataset = SVD()
 
-    model = ViSiL(pretrained=True).to(args.gpu_id)
+    model = ViSiL(pretrained=True, symmetric='symmetric' in args.similarity_function).to(args.gpu_id)
     model.eval()
 
     query_vs_target(model, dataset, args)
