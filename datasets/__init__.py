@@ -8,7 +8,7 @@ import tensorflow as tf
 
 def resize_frame(frame, desired_size):
     min_size = np.min(frame.shape[:2])
-    ratio = desired_size / min_size
+    ratio = desired_size / float(min_size)
     frame = cv2.resize(frame, dsize=(0, 0), fx=ratio, fy=ratio, interpolation=cv2.INTER_CUBIC)
     return frame
 
