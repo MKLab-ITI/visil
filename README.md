@@ -174,8 +174,8 @@ To visualize similarity matrices and the ViSiL outputs, you may use
 [this Colab notebook](https://colab.research.google.com/drive/1XwkQpXrpyr7jjq3xCL7anASBjNfNCnkn).
 
 ## Citation
-If you use this code for your research, please cite our paper.
-```
+If you use this code for your research, please consider citing our paper:
+```bibtex
 @inproceedings{kordopatis2019visil,
   title={{ViSiL}: Fine-grained Spatio-Temporal Video Similarity Learning},
     author={Kordopatis-Zilos, Giorgos and Papadopoulos, Symeon and Patras, Ioannis and Kompatsiaris, Ioannis},
@@ -184,7 +184,10 @@ If you use this code for your research, please cite our paper.
 }
 ```
 ## Related Projects
-**[DnS](https://github.com/mever-team/distill-and-select)** **[FIVR-200K](https://github.com/MKLab-ITI/FIVR-200K)**
+
+**[DnS](https://github.com/mever-team/distill-and-select)** - improved performance and better computational efficiency
+
+**[FIVR-200K](https://github.com/MKLab-ITI/FIVR-200K)** - download our FIVR-200K dataset
 
 ## License
 This project is licensed under the Apache License 2.0 - see the [LICENSE](LICENSE) file for details
