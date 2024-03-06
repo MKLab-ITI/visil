@@ -1,5 +1,6 @@
 import cv2
 import numpy as np
+import os
 
 
 def center_crop(frame, desired_size):
@@ -43,6 +44,26 @@ def load_video(video, all_frames=False, fps=1, cc_size=224, rs_size=256):
                 break
         count += 1
     cap.release()
+    frames = np.array(frames)
+    if cc_size is not None:
+        frames = center_crop(frames, cc_size)
+    return frames
+
+def load_video_2(folder_address, aweme_id, cc_size=224, rs_size=256):
+    img_list = [] # ['12345678_0.jpg', '23456789_1.jpg']
+    all_file = os.listdir(folder_address)
+    for single_file in all_file:
+        if str(aweme_id) in single_file:
+            img_list.append(single_file)
+    frames = []
+    for img in img_list:
+        img_address = os.path.join(folder_address, img)
+        single_image = cv2.imread(img_address)
+        if isinstance(single_image, np.ndarray):
+            single_image = cv2.cvtColor(single_image, cv2.COLOR_BGR2RGB)
+            if rs_size is not None:
+                single_image = resize_frame(single_image, rs_size)
+                frames.append(single_image)
     frames = np.array(frames)
     if cc_size is not None:
         frames = center_crop(frames, cc_size)
